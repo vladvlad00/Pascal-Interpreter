@@ -1,0 +1,11 @@
+PROGRAM gigel;
+VAR
+    a,b:INTEGER;
+    c:REAL;
+BEGIN
+    a := 3;
+    b := 5;
+    c := a / b;
+    BEGIN
+    END
+END.
