@@ -1,6 +1,7 @@
 from MyParser import *
 from MySymbolTable import *
 from MyErrors import *
+from MyMemory import *
 
 
 class NodeVisitor:
@@ -31,12 +32,12 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.compound_statement)
 
     def visit_Program(self, node):
-        print("BEGIN SCOPE GLOBAL")
+        # print("BEGIN SCOPE GLOBAL")
         global_scope = ScopedSymbolTable(scope_name='global',scope_level=1)
         self.current_scope = global_scope
         self.visit(node.block)
-        print(self.current_scope)
-        print("END SCOPE GLOBAL")
+        # print(self.current_scope)
+        # print("END SCOPE GLOBAL")
         self.current_scope = self.current_scope.enclosing_scope
 
     def visit_Compound(self, node):
@@ -76,7 +77,7 @@ class SemanticAnalyzer(NodeVisitor):
         proc_symbol = ProcedureSymbol(proc_name)
         self.current_scope.insert(proc_symbol)
 
-        print("BEGIN SCOPE '%s'" %proc_name)
+        # print("BEGIN SCOPE '%s'" %proc_name)
 
         procedure_scope = ScopedSymbolTable(
             scope_name=proc_name,
@@ -94,9 +95,13 @@ class SemanticAnalyzer(NodeVisitor):
 
         self.visit(node.block_node)
 
-        print(self.current_scope)
-        print("END SCOPE '%s'" %proc_name)
+        # print(self.current_scope)
+        # print("END SCOPE '%s'" %proc_name)
         self.current_scope=self.current_scope.enclosing_scope
+
+    def visit_ProcedureCall(self, node):
+        for param_node in node.actual_params:
+            self.visit(param_node)
 
     def visit_Num(self, node):
         pass
@@ -106,11 +111,9 @@ class SemanticAnalyzer(NodeVisitor):
 
 
 class Interpreter(NodeVisitor):
-
-    GLOBAL_SCOPE = {}
-
     def __init__(self, tree):
         self.tree = tree
+        self.call_stack = CallStack()
 
     def visit_UnaryOp(self, node):
         op = node.op.type
@@ -143,18 +146,27 @@ class Interpreter(NodeVisitor):
 
     def visit_Assign(self, node):
         var_name = node.left.value
-        self.GLOBAL_SCOPE[var_name] = self.visit(node.right)
+        var_value = self.visit(node.right)
+
+        self.call_stack.top()[var_name] = var_value
 
     def visit_Var(self, node):
         var_name = node.value
-        val = self.GLOBAL_SCOPE.get(var_name)
-        if val is None:
-            raise NameError(repr(var_name))
-        else:
-            return val
+        val = self.call_stack.top().get(var_name)
+        return val
 
     def visit_Program(self, node):
+        program_name = node.name
+
+        ar = ActivationRecord(
+            name=program_name,
+            type=ARType.PROGRAM,
+            nesting_level=1
+        )
+        self.call_stack.push(ar)
         self.visit(node.block)
+        print(self.call_stack)
+        self.call_stack.pop()
 
     def visit_Block(self, node):
         for declaration in node.declarations:
@@ -168,6 +180,9 @@ class Interpreter(NodeVisitor):
         pass
 
     def visit_ProcedureDecl(self, node):
+        pass
+
+    def visit_ProcedureCall(self, node):
         pass
 
     def interpret(self):
@@ -191,8 +206,6 @@ def main():
 
         interpreter = Interpreter(tree)
         result = interpreter.interpret()
-        for variable in interpreter.GLOBAL_SCOPE:
-            print('{var} = {value}'.format(var=variable, value=interpreter.GLOBAL_SCOPE[variable]))
     except Error as e:
         print(e.message)
 

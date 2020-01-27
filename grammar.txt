@@ -26,6 +26,8 @@ statement : compound_statement
 
 assignment_statement : variable ASSIGN expr
 
+proccall_statement : ID LPAR (expr (COMMA expr)*)? RPAR"
+
 empty :
 
 expr : term ((PLUS | MINUS) term)*

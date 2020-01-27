@@ -1,4 +1,5 @@
 from MyLexer import *
+from MyErrors import *
 
 
 class AST:
@@ -85,7 +86,11 @@ class Param(AST):
         self.type_node = type_node
 
 
-from MyErrors import *
+class ProcedureCall(AST):
+    def __init__(self, proc_name, actual_params, token):
+        self.proc_name = proc_name
+        self.actual_params = actual_params
+        self.token = token
 
 
 class Parser:
@@ -209,11 +214,14 @@ class Parser:
         return results
 
     def statement(self):
-        # statement: compound_statement | assignment_statement | empty
+        # statement: compound_statement | assignment_statement | proccall_statement | empty
         if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
         elif self.current_token.type == TokenType.ID:
-            node = self.assignment_statement()
+            if self.lexer.current_character == '(':
+                node = self.proccall_statement()
+            else:
+                node = self.assignment_statement()
         else:
             node = self.empty()
         return node
@@ -225,6 +233,27 @@ class Parser:
         self.validate(TokenType.ASSIGN)
         right = self.expr()
         node = Assign(left, token, right)
+        return node
+
+    def proccall_statement(self):
+        # proccall_statement : ID LPAR (expr (COMMA expr)*)? RPAR"
+        token = self.current_token
+
+        proc_name = token.value
+        self.validate(TokenType.ID)
+        self.validate(TokenType.LPAR)
+
+        actual_params = []
+        if self.current_token.type != TokenType.RPAR:
+            node = self.expr()
+            actual_params.append(node)
+        while self.current_token.type == TokenType.COMMA:
+            self.validate(TokenType.COMMA)
+            node = self.expr()
+            actual_params.append(node)
+        self.validate(TokenType.RPAR)
+
+        node = ProcedureCall(proc_name,actual_params,token)
         return node
 
     def variable(self):
