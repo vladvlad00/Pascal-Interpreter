@@ -85,6 +85,7 @@
       <workItem from="1579884066608" duration="4304000" />
       <workItem from="1579939415903" duration="2028000" />
       <workItem from="1580127453961" duration="23143000" />
+      <workItem from="1580154685425" duration="1874000" />
     </task>
     <servers />
   </component>
@@ -121,6 +122,6 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Pascal_Interpreter$main.coverage" NAME="main Coverage Results" MODIFIED="1580153011396" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Pascal_Interpreter$main.coverage" NAME="main Coverage Results" MODIFIED="1580156329727" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

@@ -1,6 +1,11 @@
-program Main;
-var x, y : integer;
-begin { Main }
-   y := 7;
-   x := (y + 3) * 3;
-end.  { Main }
+program gigel;
+var
+    a:integer;
+procedure bibel(x:integer);
+begin
+    a:=3;
+end;
+
+begin
+    bibel(2);
+end.

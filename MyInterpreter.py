@@ -100,6 +100,16 @@ class SemanticAnalyzer(NodeVisitor):
         self.current_scope=self.current_scope.enclosing_scope
 
     def visit_ProcedureCall(self, node):
+        proc_name = node.proc_name
+        proc_symbol = self.current_scope.lookup(proc_name)
+        if proc_symbol is None:
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
+        else:
+            num_actual_params = len(node.actual_params)
+            num_formal_params = len(proc_symbol.params)
+            if num_actual_params != num_formal_params:
+                self.error(error_code=ErrorCode.INCORRECT_PARAMETERS, token=node.token)
+
         for param_node in node.actual_params:
             self.visit(param_node)
 

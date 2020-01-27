@@ -5,6 +5,7 @@ class ErrorCode(Enum):
     UNEXPECTED_TOKEN = 'Unexpected token'
     ID_NOT_FOUND = 'Identifier not found'
     DUPLICATE_ID = 'Duplicate id found'
+    INCORRECT_PARAMETERS = 'Incorrect number of parameters'
 
 
 class Error(Exception):
@@ -20,6 +21,7 @@ class LexerError(Error):
 
 class ParserError(Error):
     pass
+
 
 class SemanticError(Error):
     pass
