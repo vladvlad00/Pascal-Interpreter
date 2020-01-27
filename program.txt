@@ -1,13 +1,13 @@
 PROGRAM Part10;
 VAR
    number     : INTEGER;
-   a, b, c, x : INTEGER;
+   a, b, c, x : INTEGeR;
    y          : REAL;
 
 BEGIN {Part10}
    BEGIN
       number := 2;
-      a := number;
+      z := number;
       b := 10 * a + 10 * number DIV 4;
       c := a - - b
    END;

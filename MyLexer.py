@@ -1,37 +1,43 @@
-# Token types
-#
-# EOF - end-of-file
-INTEGER       = 'INTEGER'
-REAL          = 'REAL'
-INTEGER_CONST = 'INTEGER_CONST'
-REAL_CONST    = 'REAL_CONST'
-PLUS          = 'PLUS'
-MINUS         = 'MINUS'
-MUL           = 'MUL'
-INTEGER_DIV   = 'INTEGER_DIV'
-FLOAT_DIV     = 'FLOAT_DIV'
-LPAR          = 'LPAR'
-RPAR          = 'RPAR'
-ID            = 'ID'
-ASSIGN        = 'ASSIGN'
-BEGIN         = 'BEGIN'
-END           = 'END'
-SEMI          = 'SEMI'
-DOT           = 'DOT'
-PROGRAM       = 'PROGRAM'
-VAR           = 'VAR'
-COLON         = 'COLON'
-COMMA         = 'COMMA'
-PROCEDURE     = 'PROCEDURE'
-EOF           = 'EOF'
+from enum import  Enum
+
+class TokenType(Enum):
+    # single-character token types
+    PLUS = '+'
+    MINUS = '-'
+    MUL = '*'
+    FLOAT_DIV = '/'
+    LPAR = '('
+    RPAR = ')'
+    SEMI = ';'
+    DOT = '.'
+    COLON = ':'
+    COMMA = ','
+    # block of reserved words
+    PROGRAM = 'PROGRAM'  # marks the beginning of the block
+    INTEGER = 'INTEGER'
+    REAL = 'REAL'
+    INTEGER_DIV = 'DIV'
+    VAR = 'VAR'
+    PROCEDURE = 'PROCEDURE'
+    BEGIN = 'BEGIN'
+    END = 'END'  # marks the end of the block
+    # misc
+    ID = 'ID'
+    INTEGER_CONST = 'INTEGER_CONST'
+    REAL_CONST = 'REAL_CONST'
+    ASSIGN = ':='
+    EOF = 'EOF'
 
 
 class Token:
-    def __init__(self, type, value):
+    def __init__(self, type, value, line=None, column=None):
         # token type: INTEGER, PLUS, MINUS, MUL, DIV, EOF
         self.type = type
         # token value: 0..9, '+', '-', '*', '/', '(', ')' or None
         self.value = value
+        # token position
+        self.line = line
+        self.column = column
 
     def __str__(self):
         """ string representation of class instance
@@ -39,25 +45,37 @@ class Token:
          Example:  Token(INTEGER, 3)
                    Token(PLUS, '+')
         """
-        return 'Token({type}, {value})'.format(
+        return 'Token({type}, {value}, position={line}:{column})'.format(
             type=self.type,
-            value=repr(self.value)
+            value=repr(self.value),
+            line=self.line,
+            column=self.column
         )
 
     def __repr__(self):
         return self.__str__()
 
 
-RESERVED_KEYWORDS = {
-    'PROGRAM': Token('PROGRAM', 'PROGRAM'),
-    'VAR': Token('VAR', 'VAR'),
-    'DIV': Token('INTEGER_DIV', 'DIV'),
-    'INTEGER': Token('INTEGER', 'INTEGER'),
-    'REAL': Token('REAL', 'REAL'),
-    'BEGIN': Token('BEGIN', 'BEGIN'),
-    'END': Token('END', 'END'),
-    'PROCEDURE': Token('PROCEDURE', 'PROCEDURE'),
-}
+def _build_reserved_keywords():
+    """Build a dictionary of reserved keywords.
+
+    The function relies on the fact that in the TokenType
+    enumeration the beginning of the block of reserved keywords is
+    marked with PROGRAM and the end of the block is marked with
+    the END keyword.
+    """
+    # enumerations support iteration, in definition order
+    tt_list = list(TokenType)
+    start_index = tt_list.index(TokenType.PROGRAM)
+    end_index = tt_list.index(TokenType.END)
+    reserved_keywords = {
+        token_type.value: token_type
+        for token_type in tt_list[start_index:end_index + 1]
+    }
+    return reserved_keywords
+
+
+RESERVED_KEYWORDS = _build_reserved_keywords()
 
 
 class Lexer:
@@ -67,17 +85,31 @@ class Lexer:
         # index of the character in text
         self.pos = 0
         self.current_character = self.text[self.pos]
+        # token line and column number
+        self.line = 1
+        self.column = 1
 
     def error(self):
-        raise Exception('Error parsing input')
+        from MyErrors import LexerError
+        s = "Lexer error on '{char}' line: '{line}' column: '{column}'".format(
+            char=self.current_character,
+            line=self.line,
+            column=self.column
+        )
+        raise LexerError(message=s)
 
     def advance(self):
-        # advance pos and set current_character
+        # advance pos and set current_character and update line and column position
+        if self.current_character == '\n':
+            self.line += 1
+            self.column = 0
+
         self.pos += 1
         if self.pos > len(self.text) - 1:
             self.current_character = None  # EOF
         else:
             self.current_character = self.text[self.pos]
+            self.column += 1
 
     def peek(self):
         # returns the next character in the text without advancing
@@ -105,6 +137,8 @@ class Lexer:
             result += self.current_character
             self.advance()
 
+        token = Token(type=None, value=None, line=self.line, column=self.column)
+
         if self.current_character == '.':
             result += self.current_character
             self.advance()
@@ -113,9 +147,12 @@ class Lexer:
                 result += self.current_character
                 self.advance()
 
-            token = Token(REAL_CONST, float(result))
+            token.type = TokenType.REAL_CONST
+            token.value = float(result)
         else:
-            token = Token(INTEGER_CONST, int(result))
+
+            token.type = TokenType.INTEGER_CONST
+            token.value = int(result)
 
         return token
 
@@ -126,7 +163,14 @@ class Lexer:
             result += self.current_character
             self.advance()
 
-        token = RESERVED_KEYWORDS.get(result.upper(), Token(ID, result))
+        token = Token(type=None, value=None, line=self.line, column=self.column)
+        token_type = RESERVED_KEYWORDS.get(result.upper())
+        if token_type is None:
+            token.type = TokenType.ID
+            token.value = result
+        else:
+            token.type = token_type
+            token.value = result.upper()
         return token
 
     def get_next_token(self):
@@ -135,66 +179,51 @@ class Lexer:
         into tokens (one at a time).
         """
         while self.current_character is not None:
-
             if self.current_character.isspace():
                 self.skip_whitespace()
                 continue
 
             if self.current_character == '{':
+                self.advance()
                 self.skip_comment()
                 continue
-
-            if self.current_character.isdigit():
-                return self.number()
-
-            if self.current_character == '+':
-                self.advance()
-                return Token(PLUS, '+')
-
-            if self.current_character == '-':
-                self.advance()
-                return Token(MINUS, '-')
-
-            if self.current_character == '*':
-                self.advance()
-                return Token(MUL, '*')
-
-            if self.current_character == '/':
-                self.advance()
-                return Token(FLOAT_DIV, '/')
-
-            if self.current_character == '(':
-                self.advance()
-                return Token(LPAR, '(')
-
-            if self.current_character == ')':
-                self.advance()
-                return Token(RPAR, ')')
 
             if self.current_character.isalpha():
                 return self._id()
 
+            if self.current_character.isdigit():
+                return self.number()
+
             if self.current_character == ':' and self.peek() == '=':
+                token = Token(
+                    type=TokenType.ASSIGN,
+                    value=TokenType.ASSIGN.value,  # ':='
+                    line=self.line,
+                    column=self.column,
+                )
                 self.advance()
                 self.advance()
-                return Token(ASSIGN, ':=')
+                return token
 
-            if self.current_character == ';':
+            # single-character token
+            try:
+                # get enum member by value, e.g.
+                # TokenType(';') --> TokenType.SEMI
+                token_type = TokenType(self.current_character)
+            except ValueError:
+                # no enum member with value equal to self.current_char
+                self.error()
+            else:
+                # create a token with a single-character lexeme as its value
+                token = Token(
+                    type=token_type,
+                    value=token_type.value,  # e.g. ';', '.', etc
+                    line=self.line,
+                    column=self.column,
+                )
                 self.advance()
-                return Token(SEMI, ';')
+                return token
 
-            if self.current_character == '.':
-                self.advance()
-                return Token(DOT, '.')
-
-            if self.current_character == ':':
-                self.advance()
-                return Token(COLON, ':')
-
-            if self.current_character == ',':
-                self.advance()
-                return Token(COMMA, ',')
-
-            self.error()
-
-        return Token(EOF, None)
+        # EOF (end-of-file) token indicates that there is no more
+        # input left for lexical analysis
+        return Token(type=TokenType.EOF, value=None)

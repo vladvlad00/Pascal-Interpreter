@@ -1,5 +1,6 @@
 from MyParser import *
 from MySymbolTable import *
+from MyErrors import *
 
 
 class NodeVisitor:
@@ -16,6 +17,13 @@ class NodeVisitor:
 class SemanticAnalyzer(NodeVisitor):
     def __init__(self):
         self.current_scope = None
+
+    def error(self, error_code, token):
+        raise SemanticError(
+            error_code=error_code,
+            token=token,
+            message=f'{error_code.value} -> {token}',
+        )
 
     def visit_Block(self, node):
         for declaration in node.declarations:
@@ -50,7 +58,7 @@ class SemanticAnalyzer(NodeVisitor):
         var_symbol = VarSymbol(var_name, type_symbol)
 
         if self.current_scope.lookup(var_name,current_scope_only=True):
-            raise Exception("Error: Duplicate identifier '%s' found" % var_name)
+            self.error(error_code=ErrorCode.DUPLICATE_ID, token=node.var_node.token)
         self.current_scope.insert(var_symbol)
 
     def visit_Assign(self, node):
@@ -61,7 +69,7 @@ class SemanticAnalyzer(NodeVisitor):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
         if var_symbol is None:
-            raise Exception("Error: Identifier not found '%s'" % var_name)
+            self.error(error_code=ErrorCode.ID_NOT_FOUND, token=node.token)
 
     def visit_ProcedureDecl(self, node):
         proc_name = node.proc_name
@@ -106,21 +114,21 @@ class Interpreter(NodeVisitor):
 
     def visit_UnaryOp(self, node):
         op = node.op.type
-        if op == PLUS:
+        if op == TokenType.PLUS:
             return self.visit(node.expr)
-        if op == MINUS:
+        if op == TokenType.MINUS:
             return -self.visit(node.expr)
 
     def visit_BinOp(self, node):
-        if node.op.type == PLUS:
+        if node.op.type == TokenType.PLUS:
             return self.visit(node.left) + self.visit(node.right)
-        elif node.op.type == MINUS:
+        elif node.op.type == TokenType.MINUS:
             return self.visit(node.left) - self.visit(node.right)
-        elif node.op.type == MUL:
+        elif node.op.type == TokenType.MUL:
             return self.visit(node.left) * self.visit(node.right)
-        elif node.op.type == INTEGER_DIV:
+        elif node.op.type == TokenType.INTEGER_DIV:
             return self.visit(node.left) // self.visit(node.right)
-        elif node.op.type == FLOAT_DIV:
+        elif node.op.type == TokenType.FLOAT_DIV:
             return float(self.visit(node.left)) / float(self.visit(node.right))
 
     def visit_Num(self, node):
@@ -173,20 +181,20 @@ def main():
     fin = open("program.txt","r")
     text = fin.read()
 
-    lexer = Lexer(text)
-    parser = Parser(lexer)
-    tree = parser.parse()
-
-    semantic_analyzer = SemanticAnalyzer()
     try:
-        semantic_analyzer.visit(tree)
-    except Exception as e:
-        print(e)
+        lexer = Lexer(text)
+        parser = Parser(lexer)
+        tree = parser.parse()
 
-    interpreter = Interpreter(tree)
-    result = interpreter.interpret()
-    for variable in interpreter.GLOBAL_SCOPE:
-        print('{var} = {value}'.format(var=variable, value=interpreter.GLOBAL_SCOPE[variable]))
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(tree)
+
+        interpreter = Interpreter(tree)
+        result = interpreter.interpret()
+        for variable in interpreter.GLOBAL_SCOPE:
+            print('{var} = {value}'.format(var=variable, value=interpreter.GLOBAL_SCOPE[variable]))
+    except Error as e:
+        print(e.message)
 
 
 if __name__ == '__main__':

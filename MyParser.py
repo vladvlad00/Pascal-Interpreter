@@ -1,5 +1,6 @@
 from MyLexer import *
 
+
 class AST:
     pass
 
@@ -84,44 +85,51 @@ class Param(AST):
         self.type_node = type_node
 
 
+from MyErrors import *
+
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
 
-    def error(self):
-        raise Exception('Invalid syntax')
+    def error(self, error_code, token):
+        raise ParserError(
+            error_code=error_code,
+            token=token,
+            message=f'{error_code.value} -> {token}',
+        )
 
     def validate(self, token_type):
         # compare current token type with passed token type
         # if they match, go to the next token
         # else raise an exception
-        if self.current_token.type.upper() == token_type:
+        if self.current_token.type == token_type:
             self.current_token = self.lexer.get_next_token()
         else:
-            self.lexer.error()
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, token=self.current_token)
 
     def factor(self):
         # factor: PLUS factor | MINUS factor | INTEGER_CONST | REAL_CONST | LPAR expr RPAR | variable
         token = self.current_token
-        if token.type == PLUS:
-            self.validate(PLUS)
+        if token.type == TokenType.PLUS:
+            self.validate(TokenType.PLUS)
             node = UnaryOp(token, self.factor())
             return node
-        elif token.type == MINUS:
-            self.validate(MINUS)
+        elif token.type == TokenType.MINUS:
+            self.validate(TokenType.MINUS)
             node = UnaryOp(token, self.factor())
             return node
-        elif token.type == INTEGER_CONST:
-            self.validate(INTEGER_CONST)
+        elif token.type == TokenType.INTEGER_CONST:
+            self.validate(TokenType.INTEGER_CONST)
             return Num(token)
-        elif token.type == REAL_CONST:
-            self.validate(REAL_CONST)
+        elif token.type == TokenType.REAL_CONST:
+            self.validate(TokenType.REAL_CONST)
             return Num(token)
-        elif token.type == LPAR:
-            self.validate(LPAR)
+        elif token.type == TokenType.LPAR:
+            self.validate(TokenType.LPAR)
             node = self.expr()
-            self.validate(RPAR)
+            self.validate(TokenType.RPAR)
             return node
         else:
             node = self.variable()
@@ -131,14 +139,14 @@ class Parser:
         # term : factor ((MULT | INTEGER_DIV | FLOAR_DIV) factor)*
         node = self.factor()
 
-        while self.current_token.type in (MUL, INTEGER_DIV, FLOAT_DIV):
+        while self.current_token.type in (TokenType.MUL, TokenType.INTEGER_DIV, TokenType.FLOAT_DIV):
             token = self.current_token
-            if token.type == MUL:
-                self.validate(MUL)
-            elif token.type == INTEGER_DIV:
-                self.validate(INTEGER_DIV)
-            elif token.type == FLOAT_DIV:
-                self.validate(FLOAT_DIV)
+            if token.type == TokenType.MUL:
+                self.validate(TokenType.MUL)
+            elif token.type == TokenType.INTEGER_DIV:
+                self.validate(TokenType.INTEGER_DIV)
+            elif token.type == TokenType.FLOAT_DIV:
+                self.validate(TokenType.FLOAT_DIV)
 
             node = BinOp(left=node, op=token, right=self.factor())
 
@@ -151,12 +159,12 @@ class Parser:
         # factor : INTEGER
         node = self.term()
 
-        while self.current_token.type in (PLUS, MINUS):
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
             token = self.current_token
-            if token.type == PLUS:
-                self.validate(PLUS)
-            elif token.type == MINUS:
-                self.validate(MINUS)
+            if token.type == TokenType.PLUS:
+                self.validate(TokenType.PLUS)
+            elif token.type == TokenType.MINUS:
+                self.validate(TokenType.MINUS)
 
             node = BinOp(left=node, op=token, right=self.term())
 
@@ -164,20 +172,20 @@ class Parser:
 
     def program(self):
         # program: PROGRAM variable SEMI block DOT
-        self.validate(PROGRAM)
+        self.validate(TokenType.PROGRAM)
         var_node = self.variable()
         program_name = var_node.value
-        self.validate(SEMI)
+        self.validate(TokenType.SEMI)
         block_node = self.block()
-        self.validate(DOT)
+        self.validate(TokenType.DOT)
         node = Program(program_name, block_node)
         return node
 
     def compound_statement(self):
         # compound_statement: BEGIN statement_list END
-        self.validate(BEGIN)
+        self.validate(TokenType.BEGIN)
         nodes = self.statement_list()
-        self.validate(END)
+        self.validate(TokenType.END)
 
         root = Compound()
         for node in nodes:
@@ -191,20 +199,20 @@ class Parser:
 
         results = [node]
 
-        while self.current_token.type == SEMI:
-            self.validate(SEMI)
+        while self.current_token.type == TokenType.SEMI:
+            self.validate(TokenType.SEMI)
             results.append(self.statement())
 
-        if self.current_token.type == ID:
-            self.error()
+        if self.current_token.type == TokenType.ID:
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, token=self.current_token)
 
         return results
 
     def statement(self):
         # statement: compound_statement | assignment_statement | empty
-        if self.current_token.type == BEGIN:
+        if self.current_token.type == TokenType.BEGIN:
             node = self.compound_statement()
-        elif self.current_token.type == ID:
+        elif self.current_token.type == TokenType.ID:
             node = self.assignment_statement()
         else:
             node = self.empty()
@@ -214,7 +222,7 @@ class Parser:
         # assignment_statement: variable ASSIGN expr
         left = self.variable()
         token = self.current_token
-        self.validate(ASSIGN)
+        self.validate(TokenType.ASSIGN)
         right = self.expr()
         node = Assign(left, token, right)
         return node
@@ -222,7 +230,7 @@ class Parser:
     def variable(self):
         # variable: ID
         node = Var(self.current_token)
-        self.validate(ID)
+        self.validate(TokenType.ID)
         return node
 
     def empty(self):
@@ -236,48 +244,53 @@ class Parser:
         return node
 
     def declarations(self):
-        # declarations : VAR (variable_declaration SEMI)+ | (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)* | empty
+        # declarations : (VAR (variable_declaration SEMI)+)? procedure_declaration
         declarations = []
 
         while True:
-            if self.current_token.type == VAR:
-                self.validate(VAR)
-                while self.current_token.type == ID:
+            if self.current_token.type == TokenType.VAR:
+                self.validate(TokenType.VAR)
+                while self.current_token.type == TokenType.ID:
                     var_decl = self.variable_declaration()
                     declarations.extend(var_decl)
-                    self.validate(SEMI)
+                    self.validate(TokenType.SEMI)
 
-            elif self.current_token.type == PROCEDURE:
-                self.validate(PROCEDURE)
-                proc_name = self.current_token.value
-                self.validate(ID)
-                params = []
-
-                if self.current_token.type == LPAR:
-                    self.validate(LPAR)
-                    params = self.formal_parameter_list()
-                    self.validate(RPAR)
-                self.validate(SEMI)
-                block_node = self.block()
-                proc_decl = ProcedureDecl(proc_name, params, block_node)
+            elif self.current_token.type == TokenType.PROCEDURE:
+                proc_decl = self.procedure_declaration()
                 declarations.append(proc_decl)
-                self.validate(SEMI)
             else:
                 break
 
         return declarations
 
+    def procedure_declaration(self):
+        # (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)*
+        self.validate(TokenType.PROCEDURE)
+        proc_name = self.current_token.value
+        self.validate(TokenType.ID)
+        params = []
+
+        if self.current_token.type == TokenType.LPAR:
+            self.validate(TokenType.LPAR)
+            params = self.formal_parameter_list()
+            self.validate(TokenType.RPAR)
+        self.validate(TokenType.SEMI)
+        block_node = self.block()
+        proc_decl = ProcedureDecl(proc_name, params, block_node)
+        self.validate(TokenType.SEMI)
+        return proc_decl
+
     def variable_declaration(self):
         # variable_declaration: ID (COMMA ID)* COLON type_spec
         var_nodes = [Var(self.current_token)]
-        self.validate(ID)
+        self.validate(TokenType.ID)
 
-        while self.current_token.type == COMMA:
-            self.validate(COMMA)
+        while self.current_token.type == TokenType.COMMA:
+            self.validate(TokenType.COMMA)
             var_nodes.append(Var(self.current_token))
-            self.validate(ID)
+            self.validate(TokenType.ID)
 
-        self.validate(COLON)
+        self.validate(TokenType.COLON)
 
         type_node = self.type_spec()
         var_declarations = [VarDecl(var_node, type_node) for var_node in var_nodes]
@@ -286,20 +299,20 @@ class Parser:
     def type_spec(self):
         # type_spec: INTEGER | REAL
         token = self.current_token
-        if self.current_token.type == INTEGER:
-            self.validate(INTEGER)
+        if self.current_token.type == TokenType.INTEGER:
+            self.validate(TokenType.INTEGER)
         else:
-            self.validate(REAL)
+            self.validate(TokenType.REAL)
         node = Type(token)
         return node
 
     def formal_parameter_list(self):
         # formal_parameter_list : formal_parameters | formal_parameters SEMI formal_parameter_list
-        if not self.current_token.type == ID:
+        if not self.current_token.type == TokenType.ID:
             return []
         param_nodes = self.formal_parameters()
-        while self.current_token.type == SEMI:
-            self.validate(SEMI)
+        while self.current_token.type == TokenType.SEMI:
+            self.validate(TokenType.SEMI)
             param_nodes.extend(self.formal_parameters())
         return param_nodes
 
@@ -308,13 +321,13 @@ class Parser:
         param_nodes = []
 
         param_tokens = [self.current_token]
-        self.validate(ID)
-        while self.current_token.type == COMMA:
-            self.validate(COMMA)
+        self.validate(TokenType.ID)
+        while self.current_token.type == TokenType.COMMA:
+            self.validate(TokenType.COMMA)
             param_tokens.append(self.current_token)
-            self.validate(ID)
+            self.validate(TokenType.ID)
 
-        self.validate(COLON)
+        self.validate(TokenType.COLON)
         type_node = self.type_spec()
 
         for param_token in param_tokens:
@@ -325,6 +338,6 @@ class Parser:
 
     def parse(self):
         node = self.program()
-        if self.current_token.type != EOF:
-            self.error()
+        if self.current_token.type != TokenType.EOF:
+            self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, token=self.current_token)
         return node
