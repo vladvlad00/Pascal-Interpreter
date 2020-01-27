@@ -22,6 +22,7 @@ PROGRAM       = 'PROGRAM'
 VAR           = 'VAR'
 COLON         = 'COLON'
 COMMA         = 'COMMA'
+PROCEDURE     = 'PROCEDURE'
 EOF           = 'EOF'
 
 
@@ -55,6 +56,7 @@ RESERVED_KEYWORDS = {
     'REAL': Token('REAL', 'REAL'),
     'BEGIN': Token('BEGIN', 'BEGIN'),
     'END': Token('END', 'END'),
+    'PROCEDURE': Token('PROCEDURE', 'PROCEDURE'),
 }
 
 
@@ -124,7 +126,7 @@ class Lexer:
             result += self.current_character
             self.advance()
 
-        token = RESERVED_KEYWORDS.get(result, Token(ID, result))
+        token = RESERVED_KEYWORDS.get(result.upper(), Token(ID, result))
         return token
 
     def get_next_token(self):

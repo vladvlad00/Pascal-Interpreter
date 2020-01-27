@@ -71,6 +71,19 @@ class Type(AST):
         self.value = token.value
 
 
+class ProcedureDecl(AST):
+    def __init__(self, proc_name, params, block_node):
+        self.proc_name = proc_name
+        self.params = params
+        self.block_node = block_node
+
+
+class Param(AST):
+    def __init__(self, var_node, type_node):
+        self.var_node = var_node
+        self.type_node = type_node
+
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
@@ -83,7 +96,7 @@ class Parser:
         # compare current token type with passed token type
         # if they match, go to the next token
         # else raise an exception
-        if self.current_token.type == token_type:
+        if self.current_token.type.upper() == token_type:
             self.current_token = self.lexer.get_next_token()
         else:
             self.lexer.error()
@@ -223,14 +236,34 @@ class Parser:
         return node
 
     def declarations(self):
-        # declarations: VAR (variable_declaration SEMI)+ | empty
+        # declarations : VAR (variable_declaration SEMI)+ | (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)* | empty
         declarations = []
-        if self.current_token.type == VAR:
-            self.validate(VAR)
-            while self.current_token.type == ID:
-                var_decl = self.variable_declaration()
-                declarations.extend(var_decl)
+
+        while True:
+            if self.current_token.type == VAR:
+                self.validate(VAR)
+                while self.current_token.type == ID:
+                    var_decl = self.variable_declaration()
+                    declarations.extend(var_decl)
+                    self.validate(SEMI)
+
+            elif self.current_token.type == PROCEDURE:
+                self.validate(PROCEDURE)
+                proc_name = self.current_token.value
+                self.validate(ID)
+                params = []
+
+                if self.current_token.type == LPAR:
+                    self.validate(LPAR)
+                    params = self.formal_parameter_list()
+                    self.validate(RPAR)
                 self.validate(SEMI)
+                block_node = self.block()
+                proc_decl = ProcedureDecl(proc_name, params, block_node)
+                declarations.append(proc_decl)
+                self.validate(SEMI)
+            else:
+                break
 
         return declarations
 
@@ -259,6 +292,36 @@ class Parser:
             self.validate(REAL)
         node = Type(token)
         return node
+
+    def formal_parameter_list(self):
+        # formal_parameter_list : formal_parameters | formal_parameters SEMI formal_parameter_list
+        if not self.current_token.type == ID:
+            return []
+        param_nodes = self.formal_parameters()
+        while self.current_token.type == SEMI:
+            self.validate(SEMI)
+            param_nodes.extend(self.formal_parameters())
+        return param_nodes
+
+    def formal_parameters(self):
+        # formal_parameters : ID (COMMA ID)* COLON type_spec
+        param_nodes = []
+
+        param_tokens = [self.current_token]
+        self.validate(ID)
+        while self.current_token.type == COMMA:
+            self.validate(COMMA)
+            param_tokens.append(self.current_token)
+            self.validate(ID)
+
+        self.validate(COLON)
+        type_node = self.type_spec()
+
+        for param_token in param_tokens:
+            param_node = Param(Var(param_token), type_node)
+            param_nodes.append(param_node)
+
+        return param_nodes
 
     def parse(self):
         node = self.program()
