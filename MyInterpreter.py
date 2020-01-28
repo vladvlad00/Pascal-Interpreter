@@ -158,11 +158,12 @@ class Interpreter(NodeVisitor):
         var_name = node.left.value
         var_value = self.visit(node.right)
 
-        self.call_stack.top()[var_name] = var_value
+        self.call_stack.set_ID(var_name, var_value)
 
     def visit_Var(self, node):
         var_name = node.value
-        val = self.call_stack.top().get(var_name)
+        val = self.call_stack.get_ID(var_name)
+
         return val
 
     def visit_Program(self, node):
@@ -184,16 +185,27 @@ class Interpreter(NodeVisitor):
         self.visit(node.compound_statement)
 
     def visit_VarDecl(self, node):
-        pass
+        self.call_stack.set_ID(node.var_node.value,0)
 
     def visit_Type(self, node):
         pass
 
     def visit_ProcedureDecl(self, node):
-        pass
+        self.call_stack.set_ID(node.proc_name, node)
 
     def visit_ProcedureCall(self, node):
-        pass
+        ar = ActivationRecord(
+            name=node.proc_name,
+            type=ARType.PROCEDURE,
+            nesting_level=self.call_stack.top().nesting_level
+        )
+        proc_decl=self.call_stack.get_ID(node.proc_name)
+        formal_params=proc_decl.params
+        for i in range(len(node.actual_params)):
+            ar[formal_params[i].var_node.value] = self.visit(node.actual_params[i])
+        self.call_stack.push(ar)
+        self.visit(proc_decl.block_node)
+        self.call_stack.pop()
 
     def interpret(self):
         tree = self.tree

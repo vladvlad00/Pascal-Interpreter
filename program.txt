@@ -1,11 +1,18 @@
 program gigel;
 var
     a:integer;
+    b:integer;
 procedure bibel(x:integer);
+    procedure bibel2(y:integer);
+    begin
+        b:=x;
+        x:=y;
+    end;
 begin
-    a:=3;
+    bibel2(7);
+    a:=x;
 end;
 
 begin
-    bibel(2);
+    bibel(18)
 end.
