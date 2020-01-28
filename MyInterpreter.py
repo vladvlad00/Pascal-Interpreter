@@ -66,6 +66,15 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.right)
         self.visit(node.left)
 
+    def visit_If(self, node):
+        self.visit(node.condition)
+        self.visit(node.if_code)
+        self.visit(node.else_code)
+
+    def visit_While(self, node):
+        self.visit(node.condition)
+        self.visit(node.code)
+
     def visit_Var(self, node):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
@@ -143,6 +152,18 @@ class Interpreter(NodeVisitor):
             return self.visit(node.left) // self.visit(node.right)
         elif node.op.type == TokenType.FLOAT_DIV:
             return float(self.visit(node.left)) / float(self.visit(node.right))
+        elif node.op.type == TokenType.EQUAL:
+            return self.visit(node.left) == self.visit(node.right)
+        elif node.op.type == TokenType.NOT_EQUAL:
+            return self.visit(node.left) != self.visit(node.right)
+        elif node.op.type == TokenType.LESS:
+            return self.visit(node.left) < self.visit(node.right)
+        elif node.op.type == TokenType.LESS_EQUAL:
+            return self.visit(node.left) <= self.visit(node.right)
+        elif node.op.type == TokenType.GREATER:
+            return self.visit(node.left) > self.visit(node.right)
+        elif node.op.type == TokenType.GREATER_EQUAL:
+            return self.visit(node.left) >= self.visit(node.right)
 
     def visit_Num(self, node):
         return node.value
@@ -159,6 +180,19 @@ class Interpreter(NodeVisitor):
         var_value = self.visit(node.right)
 
         self.call_stack.set_ID(var_name, var_value)
+
+    def visit_If(self, node):
+        cond = self.visit(node.condition)
+        if cond is True:
+            self.visit(node.if_code)
+        else:
+            self.visit(node.else_code)
+
+    def visit_While(self, node):
+        cond = self.visit(node.condition)
+        while cond is True:
+            self.visit(node.code)
+            cond = self.visit(node.condition)
 
     def visit_Var(self, node):
         var_name = node.value

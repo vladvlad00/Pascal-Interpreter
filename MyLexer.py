@@ -22,11 +22,13 @@ class TokenType(Enum):
     INTEGER_DIV = 'DIV'
     VAR = 'VAR'
     PROCEDURE = 'PROCEDURE'
-    AND = 'END'
+    AND = 'AND'
     OR = 'OR'
     IF = 'IF'
     THEN = 'THEN'
     ELSE = 'ELSE'
+    WHILE = 'WHILE'
+    DO = 'DO'
     BEGIN = 'BEGIN'
     END = 'END'  # marks the end of the block
     # misc

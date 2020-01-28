@@ -28,7 +28,9 @@ assignment_statement : variable ASSIGN expr
 
 proccall_statement : ID LPAR (expr (COMMA expr)*)? RPAR"
 
-if_statement : IF LPAR condition RPAR THEN (stamement | compound_statement) (ELSE (statement | compound_statement))?
+if_statement : IF LPAR condition RPAR THEN (stamement_list | compound_statement) (ELSE (statement_list | compound_statement))?
+
+while_statement : WHILE LPAR condition RPAR DO (statement | compound_statement) SEMI
 
 empty :
 

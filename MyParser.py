@@ -45,6 +45,12 @@ class If(AST):
         self.else_code = else_code
 
 
+class While(AST):
+    def __init__(self, condition, code):
+        self.condition = condition
+        self.code = code
+
+
 class Var(AST):
     def __init__(self, token):
         self.token = token
@@ -139,7 +145,7 @@ class Parser:
         elif token.type == TokenType.GREATER_EQUAL:
             self.validate(TokenType.GREATER_EQUAL)
 
-        node = BinOp(left=node, op=token, right=self.condition())
+        node = BinOp(left=node, op=token, right=self.expr())
 
         return node
 
@@ -224,19 +230,16 @@ class Parser:
         # (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)*
         declarations = []
 
-        while True:
-            if self.current_token.type == TokenType.VAR:
-                self.validate(TokenType.VAR)
-                while self.current_token.type == TokenType.ID:
-                    var_decl = self.variable_declaration()
-                    declarations.extend(var_decl)
-                    self.validate(TokenType.SEMI)
+        if self.current_token.type == TokenType.VAR:
+            self.validate(TokenType.VAR)
+            while self.current_token.type == TokenType.ID:
+                var_decl = self.variable_declaration()
+                declarations.extend(var_decl)
+                self.validate(TokenType.SEMI)
 
-            elif self.current_token.type == TokenType.PROCEDURE:
-                proc_decl = self.procedure_declaration()
-                declarations.append(proc_decl)
-            else:
-                break
+        while self.current_token.type == TokenType.PROCEDURE:
+            proc_decl = self.procedure_declaration()
+            declarations.append(proc_decl)
 
         return declarations
 
@@ -346,6 +349,8 @@ class Parser:
             node = self.compound_statement()
         elif self.current_token.type == TokenType.IF:
             node = self.if_statement()
+        elif self.current_token.type == TokenType.WHILE:
+            node = self.while_statement()
         elif self.current_token.type == TokenType.ID:
             if self.lexer.current_character == '(':
                 node = self.proccall_statement()
@@ -396,6 +401,7 @@ class Parser:
         else:
             if_code = self.statement()
         if self.current_token.type == TokenType.ELSE:
+            self.validate(TokenType.SEMI)
             self.validate(TokenType.ELSE)
             if self.current_token.type == TokenType.BEGIN:
                 else_code = self.compound_statement()
@@ -404,7 +410,20 @@ class Parser:
         else:
             else_code = self.empty()
 
-        node = If(condition,if_code,else_code)
+        node = If(condition, if_code, else_code)
+        return node
+
+    def while_statement(self):
+        self.validate(TokenType.WHILE)
+        self.validate(TokenType.LPAR)
+        condition = self.condition()
+        self.validate(TokenType.RPAR)
+        self.validate(TokenType.DO)
+        if self.current_token.type == TokenType.BEGIN:
+            code = self.compound_statement()
+        else:
+            code = self.statement()
+        node = While(condition, code)
         return node
 
     def variable(self):

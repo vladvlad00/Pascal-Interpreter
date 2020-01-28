@@ -3,9 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="cba53620-cd4e-4682-aa7c-52ffc5a66370" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyInterpreter.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyInterpreter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MyLexer.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyLexer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MyParser.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyParser.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/program.txt" beforeDir="false" afterPath="$PROJECT_DIR$/program.txt" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -94,7 +96,8 @@
       <workItem from="1580154685425" duration="2105000" />
       <workItem from="1580218494135" duration="137000" />
       <workItem from="1580218640078" duration="950000" />
-      <workItem from="1580222053220" duration="9127000" />
+      <workItem from="1580222053220" duration="9206000" />
+      <workItem from="1580236951112" duration="3755000" />
     </task>
     <servers />
   </component>
@@ -115,13 +118,22 @@
     </option>
   </component>
   <component name="XDebuggerManager">
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="self.current_token.type.upper()" language="Python" />
-      </configuration>
-    </watches-manager>
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/MyParser.py</url>
+          <line>416</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/MyParser.py</url>
+          <line>393</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Pascal_Interpreter$main.coverage" NAME="main Coverage Results" MODIFIED="1580225875100" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Pascal_Interpreter$main.coverage" NAME="main Coverage Results" MODIFIED="1580240695382" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
