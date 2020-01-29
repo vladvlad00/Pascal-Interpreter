@@ -1,11 +1,15 @@
 program gigel;
 var
     a:integer;
-procedure bibel(x:integer);
+
+procedure fact(x:integer);
 begin
-    a:=3;
+    if (x > 1) then
+        fact(x-1);
+    a := a * x;
 end;
 
 begin
-    bibel(2);
+    a := 1;
+    fact(6);
 end.

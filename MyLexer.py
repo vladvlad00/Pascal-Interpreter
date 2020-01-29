@@ -12,6 +12,9 @@ class TokenType(Enum):
     DOT = '.'
     COLON = ':'
     COMMA = ','
+    EQUAL = '='
+    LESS = '<'
+    GREATER = '>'
     # block of reserved words
     PROGRAM = 'PROGRAM'  # marks the beginning of the block
     INTEGER = 'INTEGER'
@@ -19,6 +22,13 @@ class TokenType(Enum):
     INTEGER_DIV = 'DIV'
     VAR = 'VAR'
     PROCEDURE = 'PROCEDURE'
+    AND = 'AND'
+    OR = 'OR'
+    IF = 'IF'
+    THEN = 'THEN'
+    ELSE = 'ELSE'
+    WHILE = 'WHILE'
+    DO = 'DO'
     BEGIN = 'BEGIN'
     END = 'END'  # marks the end of the block
     # misc
@@ -26,14 +36,15 @@ class TokenType(Enum):
     INTEGER_CONST = 'INTEGER_CONST'
     REAL_CONST = 'REAL_CONST'
     ASSIGN = ':='
+    NOT_EQUAL = '<>'
+    LESS_EQUAL = '<='
+    GREATER_EQUAL = '>='
     EOF = 'EOF'
 
 
 class Token:
     def __init__(self, type, value, line=None, column=None):
-        # token type: INTEGER, PLUS, MINUS, MUL, DIV, EOF
         self.type = type
-        # token value: 0..9, '+', '-', '*', '/', '(', ')' or None
         self.value = value
         # token position
         self.line = line
@@ -200,6 +211,39 @@ class Lexer:
                     value=TokenType.ASSIGN.value,  # ':='
                     line=self.line,
                     column=self.column,
+                )
+                self.advance()
+                self.advance()
+                return token
+
+            if self.current_character == '<' and self.peek() == '>':
+                token = Token(
+                    type=TokenType.NOT_EQUAL,
+                    value=TokenType.NOT_EQUAL.value,
+                    line=self.line,
+                    column=self.column
+                )
+                self.advance()
+                self.advance()
+                return token
+
+            if self.current_character == '<' and self.peek() == '=':
+                token = Token(
+                    type=TokenType.LESS_EQUAL,
+                    value=TokenType.LESS_EQUAL.value,
+                    line=self.line,
+                    column=self.column
+                )
+                self.advance()
+                self.advance()
+                return token
+
+            if self.current_character == '>' and self.peek() == '=':
+                token = Token(
+                    type=TokenType.GREATER_EQUAL,
+                    value=TokenType.GREATER_EQUAL.value,
+                    line=self.line,
+                    column=self.column
                 )
                 self.advance()
                 self.advance()

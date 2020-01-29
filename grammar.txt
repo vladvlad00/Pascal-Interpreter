@@ -2,9 +2,9 @@ program : PROGRAM variable SEMI block DOT
 
 block : declarations compound_statement
 
-declarations : VAR (variable_declaration SEMI)+
-             | (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)*
-             | empty
+declarations : (VAR (variable_declaration SEMI)+)* (PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI)*
+
+procedure_declaration : PROCEDURE ID (LPAR formal_parameter_list RPAR)? SEMI block SEMI
 
 formal_parameter_list : formal_parameters
                       | formal_parameters SEMI formal_parameter_list
@@ -28,7 +28,15 @@ assignment_statement : variable ASSIGN expr
 
 proccall_statement : ID LPAR (expr (COMMA expr)*)? RPAR"
 
+if_statement : IF LPAR condition RPAR THEN (stamement_list | compound_statement) (ELSE (statement_list | compound_statement))?
+
+while_statement : WHILE LPAR condition RPAR DO (statement | compound_statement) SEMI
+
 empty :
+
+compound_condition : condition ((AND | OR) condition)* ------ not good
+
+condition : expr (EQUAL | NOT_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) expr
 
 expr : term ((PLUS | MINUS) term)*
 
