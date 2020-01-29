@@ -29,6 +29,9 @@ class TokenType(Enum):
     ELSE = 'ELSE'
     WHILE = 'WHILE'
     DO = 'DO'
+    FOR = 'FOR'
+    TO = 'TO'
+    DOWNTO = 'DOWNTO'
     BEGIN = 'BEGIN'
     END = 'END'  # marks the end of the block
     # misc

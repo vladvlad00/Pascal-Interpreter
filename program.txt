@@ -1,15 +1,11 @@
 program gigel;
 var
     a:integer;
-
-procedure fact(x:integer);
-begin
-    if (x > 1) then
-        fact(x-1);
-    a := a * x;
-end;
+    i:integer;
+    suma:integer;
 
 begin
-    a := 1;
-    fact(6);
+    a := 18;
+    for (i:=1 to a) do
+        suma := suma + i;
 end.

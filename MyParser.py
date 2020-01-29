@@ -51,6 +51,14 @@ class While(AST):
         self.code = code
 
 
+class For(AST):
+    def __init__(self, assignment, condition, next, code):
+        self.assignment = assignment
+        self.condition = condition
+        self.next = next
+        self.code = code
+
+
 class Var(AST):
     def __init__(self, token):
         self.token = token
@@ -127,27 +135,52 @@ class Parser:
         else:
             self.error(error_code=ErrorCode.UNEXPECTED_TOKEN, token=self.current_token)
 
-    def condition(self):
-        # condition : expr (EQUAL | NOT_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) expr
-        node = self.expr()
-        token = self.current_token
-
-        if token.type == TokenType.EQUAL:
-            self.validate(TokenType.EQUAL)
-        elif token.type == TokenType.NOT_EQUAL:
-            self.validate(TokenType.NOT_EQUAL)
-        elif token.type == TokenType.LESS:
-            self.validate(TokenType.LESS)
-        elif token.type == TokenType.LESS_EQUAL:
-            self.validate(TokenType.LESS_EQUAL)
-        elif token.type == TokenType.GREATER:
-            self.validate(TokenType.GREATER)
-        elif token.type == TokenType.GREATER_EQUAL:
-            self.validate(TokenType.GREATER_EQUAL)
-
-        node = BinOp(left=node, op=token, right=self.expr())
-
+    def or_condition(self):
+        # or_condition : and_condition (OR or_condition)*
+        node = self.and_condition()
+        if self.current_token.type == TokenType.OR:
+            token = self.current_token
+            self.validate(TokenType.OR)
+            node = BinOp(left=node, op=token, right=self.or_condition())
         return node
+
+
+    def and_condition(self):
+        # and_condition : condition (AND and_condition)*
+        node = self.condition()
+        if self.current_token.type == TokenType.AND:
+            token = self.current_token
+            self.validate(TokenType.AND)
+            node = BinOp(left=node, op=token, right=self.and_condition())
+        return node
+
+    def condition(self):
+        # condition : expr (EQUAL | NOT_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) expr | or_condition
+        if self.current_token.type == TokenType.LPAR:
+            self.validate(TokenType.LPAR)
+            node = self.or_condition()
+            self.validate(TokenType.RPAR)
+            return node
+        else:
+            node = self.expr()
+            token = self.current_token
+
+            if token.type == TokenType.EQUAL:
+                self.validate(TokenType.EQUAL)
+            elif token.type == TokenType.NOT_EQUAL:
+                self.validate(TokenType.NOT_EQUAL)
+            elif token.type == TokenType.LESS:
+                self.validate(TokenType.LESS)
+            elif token.type == TokenType.LESS_EQUAL:
+                self.validate(TokenType.LESS_EQUAL)
+            elif token.type == TokenType.GREATER:
+                self.validate(TokenType.GREATER)
+            elif token.type == TokenType.GREATER_EQUAL:
+                self.validate(TokenType.GREATER_EQUAL)
+
+            node = BinOp(left=node, op=token, right=self.expr())
+
+            return node
 
     def expr(self):
         # expr : term ((PLUS | MINUS) term)*
@@ -351,6 +384,8 @@ class Parser:
             node = self.if_statement()
         elif self.current_token.type == TokenType.WHILE:
             node = self.while_statement()
+        elif self.current_token.type == TokenType.FOR:
+            node = self.for_statement()
         elif self.current_token.type == TokenType.ID:
             if self.lexer.current_character == '(':
                 node = self.proccall_statement()
@@ -391,9 +426,10 @@ class Parser:
         return node
 
     def if_statement(self):
+        # if_statement : IF LPAR or_condition RPAR THEN (stamement_list | compound_statement) (ELSE (statement_list | compound_statement))?
         self.validate(TokenType.IF)
         self.validate(TokenType.LPAR)
-        condition = self.condition()
+        condition = self.or_condition()
         self.validate(TokenType.RPAR)
         self.validate(TokenType.THEN)
         if self.current_token.type == TokenType.BEGIN:
@@ -414,9 +450,10 @@ class Parser:
         return node
 
     def while_statement(self):
+        # while_statement : WHILE LPAR or_condition RPAR DO (statement | compound_statement)
         self.validate(TokenType.WHILE)
         self.validate(TokenType.LPAR)
-        condition = self.condition()
+        condition = self.or_condition()
         self.validate(TokenType.RPAR)
         self.validate(TokenType.DO)
         if self.current_token.type == TokenType.BEGIN:
@@ -425,6 +462,48 @@ class Parser:
             code = self.statement()
         node = While(condition, code)
         return node
+
+    def for_statement(self):
+        # for_statement : FOR LPAR assignment_statement (TO | DOWNTO) expr RPAR DO (statement | compound_statement)
+        self.validate(TokenType.FOR)
+        self.validate(TokenType.LPAR)
+        assignment = self.assignment_statement()
+        one = Token(type=TokenType.INTEGER_CONST, value=1)
+        one = Num(one)
+        assign = Token(type=TokenType.ASSIGN, value=TokenType.ASSIGN.value)
+        if self.current_token.type == TokenType.TO:
+            self.validate(TokenType.TO)
+            le = Token(
+                type=TokenType.LESS_EQUAL,
+                value=TokenType.LESS_EQUAL.value
+            )
+            condition = BinOp(left=assignment.left, op=le, right=self.expr())
+
+            plus = Token(type=TokenType.PLUS, value=TokenType.PLUS.value)
+            plus1 = BinOp(left=assignment.left, op=plus, right=one)
+            next = Assign(left=assignment.left, op=assign, right=plus1)
+        elif self.current_token.type == TokenType.DOWNTO:
+            self.validate(TokenType.DOWNTO)
+            ge = Token(
+                type=TokenType.GREATER_EQUAL,
+                value=TokenType.GREATER_EQUAL.value
+            )
+            condition = BinOp(left=assignment.left, op=ge, right=self.expr())
+
+            minus = Token(type=TokenType.MINUS, value=TokenType.MINUS.value)
+            minus1 = BinOp(left=assignment.left, op=minus, right=one)
+            next = Assign(left=assignment.left, op=assign, right=minus1)
+        else:
+            self.error(ErrorCode.UNEXPECTED_TOKEN, self.current_token)
+        self.validate(TokenType.RPAR)
+        self.validate(TokenType.DO)
+        if self.current_token.type == TokenType.BEGIN:
+            code = self.compound_statement()
+        else:
+            code = self.statement()
+        node = For(assignment, condition, next, code)
+        return node
+
 
     def variable(self):
         # variable: ID
