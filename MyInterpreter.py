@@ -75,6 +75,11 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.condition)
         self.visit(node.code)
 
+    def visit_For(self, node):
+        self.visit(node.assignment)
+        self.visit(node.condition)
+        self.visit(node.code)
+
     def visit_Var(self, node):
         var_name = node.value
         var_symbol = self.current_scope.lookup(var_name)
@@ -164,6 +169,18 @@ class Interpreter(NodeVisitor):
             return self.visit(node.left) > self.visit(node.right)
         elif node.op.type == TokenType.GREATER_EQUAL:
             return self.visit(node.left) >= self.visit(node.right)
+        elif node.op.type == TokenType.AND:
+            lval = self.visit(node.left)
+            if lval is False:
+                return False
+            else:
+                return self.visit(node.right)
+        elif node.op.type == TokenType.OR:
+            lval = self.visit(node.left)
+            if lval is True:
+                return True
+            else:
+                return self.visit(node.right)
 
     def visit_Num(self, node):
         return node.value
@@ -192,6 +209,14 @@ class Interpreter(NodeVisitor):
         cond = self.visit(node.condition)
         while cond is True:
             self.visit(node.code)
+            cond = self.visit(node.condition)
+
+    def visit_For(self, node):
+        self.visit(node.assignment)
+        cond = self.visit(node.condition)
+        while cond is True:
+            self.visit(node.code)
+            self.visit(node.next)
             cond = self.visit(node.condition)
 
     def visit_Var(self, node):

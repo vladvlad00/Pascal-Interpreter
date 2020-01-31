@@ -28,15 +28,22 @@ assignment_statement : variable ASSIGN expr
 
 proccall_statement : ID LPAR (expr (COMMA expr)*)? RPAR"
 
-if_statement : IF LPAR condition RPAR THEN (stamement_list | compound_statement) (ELSE (statement_list | compound_statement))?
+if_statement : IF LPAR or_condition RPAR THEN (stamement_list | compound_statement) (SEMI ELSE (statement_list | compound_statement))?
 
-while_statement : WHILE LPAR condition RPAR DO (statement | compound_statement) SEMI
+while_statement : WHILE LPAR or_condition RPAR DO (statement | compound_statement)
+
+for_statement : FOR LPAR assignment_statement (TO | DOWNTO) expr RPAR DO (statement | compound_statement)
 
 empty :
 
 compound_condition : condition ((AND | OR) condition)* ------ not good
 
-condition : expr (EQUAL | NOT_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) expr
+or_condition : and_condition (OR or_condition)*
+
+and_condition : condition (AND and_condition)*
+
+condition : expr (EQUAL | NOT_EQUAL | LESS | LESS_EQUAL | GREATER | GREATER_EQUAL) expr |
+            LPAR or_condition RPAR
 
 expr : term ((PLUS | MINUS) term)*
 
