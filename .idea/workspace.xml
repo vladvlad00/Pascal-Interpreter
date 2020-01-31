@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="cba53620-cd4e-4682-aa7c-52ffc5a66370" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MyInterpreter.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyInterpreter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MyLexer.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyLexer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MyParser.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyParser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/grammar.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/program.txt" beforeDir="false" afterPath="$PROJECT_DIR$/program.txt" afterDir="false" />
-    </list>
+    <list default="true" id="cba53620-cd4e-4682-aa7c-52ffc5a66370" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -97,7 +90,7 @@
       <workItem from="1580218494135" duration="137000" />
       <workItem from="1580218640078" duration="950000" />
       <workItem from="1580222053220" duration="9206000" />
-      <workItem from="1580236951112" duration="3755000" />
+      <workItem from="1580236951112" duration="4359000" />
     </task>
     <servers />
   </component>
