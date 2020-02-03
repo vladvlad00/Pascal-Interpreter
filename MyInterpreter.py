@@ -66,6 +66,7 @@ class SemanticAnalyzer(NodeVisitor):
         self.visit(node.right)
         self.visit(node.left)
 
+
     def visit_If(self, node):
         self.visit(node.condition)
         self.visit(node.if_code)

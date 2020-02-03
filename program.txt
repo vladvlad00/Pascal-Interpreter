@@ -6,6 +6,4 @@ var
 
 begin
     a := 18;
-    for (i:=1 to a) do
-        suma := suma + i;
 end.

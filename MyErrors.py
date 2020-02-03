@@ -6,6 +6,7 @@ class ErrorCode(Enum):
     ID_NOT_FOUND = 'Identifier not found'
     DUPLICATE_ID = 'Duplicate id found'
     INCORRECT_PARAMETERS = 'Incorrect number of parameters'
+    INCORRECT_TYPE = 'Incorrect type'
 
 
 class Error(Exception):
